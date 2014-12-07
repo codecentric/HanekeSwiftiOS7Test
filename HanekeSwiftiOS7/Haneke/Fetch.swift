@@ -8,7 +8,7 @@
 
 import Foundation
 
-enum FetchState<T> {
+enum HNKFetchState<T> {
     case Pending
     // Using Wrapper as a workaround for error 'unimplemented IR generation feature non-fixed multi-payload enum layout'
     // See: http://swiftradar.tumblr.com/post/88314603360/swift-fails-to-compile-enum-with-two-data-cases
@@ -27,14 +27,14 @@ public class Fetch<T> {
     
     private var onFailure : Failer?
     
-    private var state : FetchState<T> = FetchState.Pending
+    private var state : HNKFetchState<T> = HNKFetchState.Pending
     
     public init() {}
     
     public func onSuccess(onSuccess : Succeeder) -> Self {
         self.onSuccess = onSuccess
         switch self.state {
-        case FetchState.Success(let wrapper):
+        case HNKFetchState.Success(let wrapper):
             onSuccess(wrapper.value)
         default:
             break
@@ -45,7 +45,7 @@ public class Fetch<T> {
     public func onFailure(onFailure : Failer) -> Self {
         self.onFailure = onFailure
         switch self.state {
-        case FetchState.Failure(let error):
+        case HNKFetchState.Failure(let error):
             onFailure(error)
         default:
             break
@@ -54,18 +54,18 @@ public class Fetch<T> {
     }
     
     func succeed(value : T) {
-        self.state = FetchState.Success(Wrapper(value))
+        self.state = HNKFetchState.Success(Wrapper(value))
         self.onSuccess?(value)
     }
     
     func fail(_ error : NSError? = nil) {
-        self.state = FetchState.Failure(error)
+        self.state = HNKFetchState.Failure(error)
         self.onFailure?(error)
     }
     
     var hasFailed : Bool {
         switch self.state {
-        case FetchState.Failure(_):
+        case HNKFetchState.Failure(_):
             return true
         default:
             return false
@@ -74,7 +74,7 @@ public class Fetch<T> {
     
     var hasSucceeded : Bool {
         switch self.state {
-        case FetchState.Success(_):
+        case HNKFetchState.Success(_):
             return true
         default:
             return false

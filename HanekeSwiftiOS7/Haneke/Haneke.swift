@@ -14,54 +14,58 @@ public struct HanekeGlobals {
     
 }
 
-public struct Shared {
-    
-    public static var imageCache : Cache<UIImage> {
-        struct Static {
-            static let name = "shared-images"
-            static let cache = Cache<UIImage>(name: name)
-        }
-        return Static.cache
-    }
-    
-    public static var dataCache : Cache<NSData> {
-        struct Static {
-            static let name = "shared-data"
-            static let cache = Cache<NSData>(name: name)
-        }
-        return Static.cache
-    }
-    
-    public static var stringCache : Cache<String> {
-        struct Static {
-            static let name = "shared-strings"
-            static let cache = Cache<String>(name: name)
-        }
-        return Static.cache
-    }
-    
-    public static var JSONCache : Cache<JSON> {
-        struct Static {
-            static let name = "shared-json"
-            static let cache = Cache<JSON>(name: name)
-        }
-        return Static.cache
-    }
-}
 
-func errorWithCode(code : Int, #description : String) -> NSError {
-    let userInfo = [NSLocalizedDescriptionKey: description]
-    return NSError(domain: HanekeGlobals.Domain, code: code, userInfo: userInfo)
-}
-
-struct Log {
+public struct Haneke {
     
-    static func error(message : String, _ error : NSError? = nil) {
-        if let error = error {
-            NSLog("%@ with error %@", message, error);
-        } else {
-            NSLog("%@", message)
+    public struct Shared {
+        
+        public static var imageCache : HNKCache<UIImage> {
+            struct Static {
+                static let name = "shared-images"
+                static let cache = HNKCache<UIImage>(name: name)
+            }
+            return Static.cache
+        }
+        
+        public static var dataCache : HNKCache<NSData> {
+            struct Static {
+                static let name = "shared-data"
+                static let cache = HNKCache<NSData>(name: name)
+            }
+            return Static.cache
+        }
+        
+        public static var stringCache : HNKCache<String> {
+            struct Static {
+                static let name = "shared-strings"
+                static let cache = HNKCache<String>(name: name)
+            }
+            return Static.cache
+        }
+        
+        public static var JSONCache : HNKCache<JSON> {
+            struct Static {
+                static let name = "shared-json"
+                static let cache = HNKCache<JSON>(name: name)
+            }
+            return Static.cache
         }
     }
     
+    static func errorWithCode(code : Int, #description : String) -> NSError {
+        let userInfo = [NSLocalizedDescriptionKey: description]
+        return NSError(domain: HanekeGlobals.Domain, code: code, userInfo: userInfo)
+    }
+    
+    struct Log {
+        
+        static func error(message : String, _ error : NSError? = nil) {
+            if let error = error {
+                NSLog("%@ with error %@", message, error);
+            } else {
+                NSLog("%@", message)
+            }
+        }
+        
+    }
 }

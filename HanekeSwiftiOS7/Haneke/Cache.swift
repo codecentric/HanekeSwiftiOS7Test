@@ -8,12 +8,14 @@
 
 import UIKit
 
-// Used to add T to NSCache
-class ObjectWrapper : NSObject {
-    let value: Any
-    
-    init(value: Any) {
-        self.value = value
+extension Haneke {
+    // Used to add T to NSCache
+    class ObjectWrapper : NSObject {
+        let value: Any
+        
+        init(value: Any) {
+            self.value = value
+        }
     }
 }
 
@@ -33,7 +35,7 @@ extension HanekeGlobals {
     
 }
 
-public class Cache<T : DataConvertible where T.Result == T, T : DataRepresentable> {
+public class HNKCache<T : HNKDataConvertible where T.Result == T, T : HNKDataRepresentable> {
     
     let name : String
     
@@ -52,7 +54,7 @@ public class Cache<T : DataConvertible where T.Result == T, T : DataRepresentabl
             }
         )
         
-        var originalFormat = Format<T>(name: HanekeGlobals.Cache.OriginalFormatName)
+        var originalFormat = HNKFormat<T>(name: HanekeGlobals.Cache.OriginalFormatName)
         self.addFormat(originalFormat)
     }
     
@@ -64,7 +66,7 @@ public class Cache<T : DataConvertible where T.Result == T, T : DataRepresentabl
     public func set(#value : T, key: String, formatName : String = HanekeGlobals.Cache.OriginalFormatName, success succeed : ((T) -> ())? = nil) {
         if let (format, memoryCache, diskCache) = self.formats[formatName] {
             self.format(value: value, format: format) { formattedValue in
-                let wrapper = ObjectWrapper(value: formattedValue)
+                let wrapper = Haneke.ObjectWrapper(value: formattedValue)
                 memoryCache.setObject(wrapper, forKey: key)
                 // Value data is sent as @autoclosure to be executed in the disk cache queue.
                 diskCache.setData(self.dataFromValue(formattedValue, format: format), key: key)
@@ -76,9 +78,9 @@ public class Cache<T : DataConvertible where T.Result == T, T : DataRepresentabl
     }
     
     public func fetch(#key : String, formatName : String = HanekeGlobals.Cache.OriginalFormatName, failure fail : Fetch<T>.Failer? = nil, success succeed : Fetch<T>.Succeeder? = nil) -> Fetch<T> {
-        let fetch = Cache.buildFetch(failure: fail, success: succeed)
+        let fetch = HNKCache.buildFetch(failure: fail, success: succeed)
         if let (format, memoryCache, diskCache) = self.formats[formatName] {
-            if let wrapper = memoryCache.objectForKey(key) as? ObjectWrapper {
+            if let wrapper = memoryCache.objectForKey(key) as? Haneke.ObjectWrapper {
                 if let result = wrapper.value as? T {
                     fetch.succeed(result)
                     diskCache.updateAccessDate(dataFromValue(result, format: format), key: key)
@@ -95,15 +97,15 @@ public class Cache<T : DataConvertible where T.Result == T, T : DataRepresentabl
         } else {
             let localizedFormat = NSLocalizedString("Format %@ not found", comment: "Error description")
             let description = String(format:localizedFormat, formatName)
-            let error = errorWithCode(HanekeGlobals.Cache.ErrorCode.FormatNotFound.rawValue, description: description)
+            let error = Haneke.errorWithCode(HanekeGlobals.Cache.ErrorCode.FormatNotFound.rawValue, description: description)
             fetch.fail(error)
         }
         return fetch
     }
     
-    public func fetch(#fetcher : Fetcher<T>, formatName : String = HanekeGlobals.Cache.OriginalFormatName, failure fail : Fetch<T>.Failer? = nil, success succeed : Fetch<T>.Succeeder? = nil) -> Fetch<T> {
+    public func fetch(#fetcher : HNKFetcher<T>, formatName : String = HanekeGlobals.Cache.OriginalFormatName, failure fail : Fetch<T>.Failer? = nil, success succeed : Fetch<T>.Succeeder? = nil) -> Fetch<T> {
         let key = fetcher.key
-        let fetch = Cache.buildFetch(failure: fail, success: succeed)
+        let fetch = HNKCache.buildFetch(failure: fail, success: succeed)
         self.fetch(key: key, formatName: formatName, failure: { error in
             if error?.code == HanekeGlobals.Cache.ErrorCode.FormatNotFound.rawValue {
                 fetch.fail(error)
@@ -148,20 +150,20 @@ public class Cache<T : DataConvertible where T.Result == T, T : DataRepresentabl
     
     // MARK: Formats
 
-    var formats : [String : (Format<T>, NSCache, DiskCache)] = [:]
+    var formats : [String : (HNKFormat<T>, NSCache, Haneke.DiskCache)] = [:]
     
-    public func addFormat(format : Format<T>) {
+    public func addFormat(format : HNKFormat<T>) {
         let name = format.name
         let formatPath = self.formatPath(formatName: name)
         let memoryCache = NSCache()
-        let diskCache = DiskCache(path: formatPath, capacity : format.diskCapacity)
+        let diskCache = Haneke.DiskCache(path: formatPath, capacity : format.diskCapacity)
         self.formats[name] = (format, memoryCache, diskCache)
     }
     
     // MARK: Internal
     
     lazy var cachePath : String = {
-        let basePath = DiskCache.basePath()
+        let basePath = Haneke.DiskCache.basePath()
         let cachePath = basePath.stringByAppendingPathComponent(self.name)
         return cachePath
     }()
@@ -171,27 +173,27 @@ public class Cache<T : DataConvertible where T.Result == T, T : DataRepresentabl
         var error : NSError? = nil
         let success = NSFileManager.defaultManager().createDirectoryAtPath(formatPath, withIntermediateDirectories: true, attributes: nil, error: &error)
         if (!success) {
-            Log.error("Failed to create directory \(formatPath)", error)
+            Haneke.Log.error("Failed to create directory \(formatPath)", error)
         }
         return formatPath
     }
     
     // MARK: Private
     
-    func dataFromValue(value : T, format : Format<T>) -> NSData? {
+    func dataFromValue(value : T, format : HNKFormat<T>) -> NSData? {
         if let data = format.convertToData?(value) {
             return data
         }
         return value.asData()
     }
     
-    private func fetchFromDiskCache(diskCache : DiskCache, key : String, memoryCache : NSCache, failure fail : ((NSError?) -> ())?, success succeed : (T) -> ()) {
+    private func fetchFromDiskCache(diskCache : Haneke.DiskCache, key : String, memoryCache : NSCache, failure fail : ((NSError?) -> ())?, success succeed : (T) -> ()) {
         diskCache.fetchData(key, failure: { error in
             if let block = fail {
                 if (error?.code == NSFileReadNoSuchFileError) {
                     let localizedFormat = NSLocalizedString("Object not found for key %@", comment: "Error description")
                     let description = String(format:localizedFormat, key)
-                    let error = errorWithCode(HanekeGlobals.Cache.ErrorCode.ObjectNotFound.rawValue, description: description)
+                    let error = Haneke.errorWithCode(HanekeGlobals.Cache.ErrorCode.ObjectNotFound.rawValue, description: description)
                     block(error)
                 } else {
                     block(error)
@@ -204,7 +206,7 @@ public class Cache<T : DataConvertible where T.Result == T, T : DataRepresentabl
                     let descompressedValue = self.decompressedImageIfNeeded(value)
                     dispatch_async(dispatch_get_main_queue(), {
                         succeed(descompressedValue)
-                        let wrapper = ObjectWrapper(value: descompressedValue)
+                        let wrapper = Haneke.ObjectWrapper(value: descompressedValue)
                         memoryCache.setObject(wrapper, forKey: key)
                     })
                 }
@@ -212,7 +214,7 @@ public class Cache<T : DataConvertible where T.Result == T, T : DataRepresentabl
         }
     }
     
-    private func fetchAndSet(fetcher : Fetcher<T>, format : Format<T>, failure fail : ((NSError?) -> ())?, success succeed : (T) -> ()) {
+    private func fetchAndSet(fetcher : HNKFetcher<T>, format : HNKFormat<T>, failure fail : ((NSError?) -> ())?, success succeed : (T) -> ()) {
         fetcher.fetch(failure: { error in
             let _ = fail?(error)
         }) { value in
@@ -220,7 +222,7 @@ public class Cache<T : DataConvertible where T.Result == T, T : DataRepresentabl
         }
     }
     
-    private func format(#value : T, format : Format<T>, success succeed : (T) -> ()) {
+    private func format(#value : T, format : HNKFormat<T>, success succeed : (T) -> ()) {
         // HACK: Ideally Cache shouldn't treat images differently but I can't think of any other way of doing this that doesn't complicate the API for other types.
         if format.isIdentity && !(value is UIImage) {
             succeed(value)
@@ -265,17 +267,17 @@ public class Cache<T : DataConvertible where T.Result == T, T : DataRepresentabl
     // Ideally we would put each of these in the respective fetcher file as a Cache extension. Unfortunately, this fails to link when using the framework in a project as of Xcode 6.1.
     
     public func fetch(#key : String, value getValue : @autoclosure () -> T.Result, formatName : String = HanekeGlobals.Cache.OriginalFormatName, success succeed : Fetch<T>.Succeeder? = nil) -> Fetch<T> {
-        let fetcher = SimpleFetcher<T>(key: key, value: getValue)
+        let fetcher = HNKSimpleFetcher<T>(key: key, value: getValue)
         return self.fetch(fetcher: fetcher, formatName: formatName, success: succeed)
     }
     
     public func fetch(#path : String, formatName : String = HanekeGlobals.Cache.OriginalFormatName,  failure fail : Fetch<T>.Failer? = nil, success succeed : Fetch<T>.Succeeder? = nil) -> Fetch<T> {
-        let fetcher = DiskFetcher<T>(path: path)
+        let fetcher = HNKDiskFetcher<T>(path: path)
         return self.fetch(fetcher: fetcher, formatName: formatName, failure: fail, success: succeed)
     }
     
     public func fetch(#URL : NSURL, formatName : String = HanekeGlobals.Cache.OriginalFormatName,  failure fail : Fetch<T>.Failer? = nil, success succeed : Fetch<T>.Succeeder? = nil) -> Fetch<T> {
-        let fetcher = NetworkFetcher<T>(URL: URL)
+        let fetcher = HNKNetworkFetcher<T>(URL: URL)
         return self.fetch(fetcher: fetcher, formatName: formatName, failure: fail, success: succeed)
     }
     

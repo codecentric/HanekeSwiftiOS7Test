@@ -53,7 +53,7 @@ extension NSFileManager {
                 if stop { break }
             }
         } else {
-            Log.error("Failed to list directory", error)
+            Haneke.Log.error("Failed to list directory", error)
         }
     }
 

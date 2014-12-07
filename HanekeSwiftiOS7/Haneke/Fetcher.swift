@@ -9,7 +9,7 @@
 import UIKit
 
 // See: http://stackoverflow.com/questions/25915306/generic-closure-in-protocol
-public class Fetcher<T : DataConvertible> {
+public class HNKFetcher<T : HNKDataConvertible> {
 
     let key : String
     
@@ -22,7 +22,7 @@ public class Fetcher<T : DataConvertible> {
     func cancelFetch() {}
 }
 
-class SimpleFetcher<T : DataConvertible> : Fetcher<T> {
+class HNKSimpleFetcher<T : HNKDataConvertible> : HNKFetcher<T> {
     
     let getValue : () -> T.Result
     

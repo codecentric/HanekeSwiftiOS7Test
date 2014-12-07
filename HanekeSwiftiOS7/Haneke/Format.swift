@@ -8,7 +8,7 @@
 
 import UIKit
 
-public struct Format<T> {
+public struct HNKFormat<T> {
     
     public let name : String
     
@@ -38,56 +38,59 @@ public struct Format<T> {
 
 }
 
-public struct ImageResizer {
+public extension Haneke {
     
-    public enum ScaleMode : String {
-        case Fill = "fill", AspectFit = "aspectfit", AspectFill = "aspectfill", None = "none"
-    }
-    
-    public typealias T = UIImage
-    
-    public let allowUpscaling : Bool
-    
-    public let size : CGSize
-    
-    public let scaleMode: ScaleMode
-    
-    public let compressionQuality : Float
-    
-    public init(size : CGSize = CGSizeZero, scaleMode : ScaleMode = .None, allowUpscaling: Bool = true, compressionQuality : Float = 1.0) {
-        self.size = size
-        self.scaleMode = scaleMode
-        self.allowUpscaling = allowUpscaling
-        self.compressionQuality = compressionQuality
-    }
-    
-    public func resizeImage(image: UIImage) -> UIImage {
-        var resizeToSize: CGSize
-        switch self.scaleMode {
-        case .Fill:
-            resizeToSize = self.size
-        case .AspectFit:
-            resizeToSize = image.size.hnk_aspectFitSize(self.size)
-        case .AspectFill:
-            resizeToSize = image.size.hnk_aspectFillSize(self.size)
-        case .None:
-            return image
-        }
-        assert(self.size.width > 0 && self.size.height > 0, "Expected non-zero size. Use ScaleMode.None to avoid resizing.")
+    public struct  ImageResizer {
         
-        // If does not allow to scale up the image
-        if (!self.allowUpscaling) {
-            if (resizeToSize.width > image.size.width || resizeToSize.height > image.size.height) {
+        public enum ScaleMode : String {
+            case Fill = "fill", AspectFit = "aspectfit", AspectFill = "aspectfill", None = "none"
+        }
+        
+        public typealias T = UIImage
+        
+        public let allowUpscaling : Bool
+        
+        public let size : CGSize
+        
+        public let scaleMode: ScaleMode
+        
+        public let compressionQuality : Float
+        
+        public init(size : CGSize = CGSizeZero, scaleMode : ScaleMode = .None, allowUpscaling: Bool = true, compressionQuality : Float = 1.0) {
+            self.size = size
+            self.scaleMode = scaleMode
+            self.allowUpscaling = allowUpscaling
+            self.compressionQuality = compressionQuality
+        }
+        
+        public func resizeImage(image: UIImage) -> UIImage {
+            var resizeToSize: CGSize
+            switch self.scaleMode {
+            case .Fill:
+                resizeToSize = self.size
+            case .AspectFit:
+                resizeToSize = image.size.hnk_aspectFitSize(self.size)
+            case .AspectFill:
+                resizeToSize = image.size.hnk_aspectFillSize(self.size)
+            case .None:
                 return image
             }
+            assert(self.size.width > 0 && self.size.height > 0, "Expected non-zero size. Use ScaleMode.None to avoid resizing.")
+            
+            // If does not allow to scale up the image
+            if (!self.allowUpscaling) {
+                if (resizeToSize.width > image.size.width || resizeToSize.height > image.size.height) {
+                    return image
+                }
+            }
+            
+            // Avoid unnecessary computations
+            if (resizeToSize.width == image.size.width && resizeToSize.height == image.size.height) {
+                return image
+            }
+            
+            let resizedImage = image.hnk_imageByScalingToSize(resizeToSize)
+            return resizedImage
         }
-        
-        // Avoid unnecessary computations
-        if (resizeToSize.width == image.size.width && resizeToSize.height == image.size.height) {
-            return image
-        }
-        
-        let resizedImage = image.hnk_imageByScalingToSize(resizeToSize)
-        return resizedImage
     }
 }

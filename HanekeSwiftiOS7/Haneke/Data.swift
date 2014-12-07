@@ -9,18 +9,18 @@
 import UIKit
 
 // See: http://stackoverflow.com/questions/25922152/not-identical-to-self
-public protocol DataConvertible {
+public protocol HNKDataConvertible {
     typealias Result
     
     class func convertFromData(data:NSData) -> Result?
 }
 
-public protocol DataRepresentable {
+public protocol HNKDataRepresentable {
     
     func asData() -> NSData!
 }
 
-extension UIImage : DataConvertible, DataRepresentable {
+extension UIImage : HNKDataConvertible, HNKDataRepresentable {
     
     public typealias Result = UIImage
     
@@ -35,7 +35,7 @@ extension UIImage : DataConvertible, DataRepresentable {
     
 }
 
-extension String : DataConvertible, DataRepresentable {
+extension String : HNKDataConvertible, HNKDataRepresentable {
     
     public typealias Result = String
     
@@ -50,7 +50,7 @@ extension String : DataConvertible, DataRepresentable {
     
 }
 
-extension NSData : DataConvertible, DataRepresentable {
+extension NSData : HNKDataConvertible, HNKDataRepresentable {
     
     public typealias Result = NSData
     
@@ -64,7 +64,7 @@ extension NSData : DataConvertible, DataRepresentable {
     
 }
 
-public enum JSON : DataConvertible, DataRepresentable {
+public enum JSON : HNKDataConvertible, HNKDataRepresentable {
     public typealias Result = JSON
     
     case Dictionary([String:AnyObject])
@@ -82,7 +82,7 @@ public enum JSON : DataConvertible, DataRepresentable {
                 return nil
             }
         } else {
-            Log.error("Invalid JSON data", error)
+            Haneke.Log.error("Invalid JSON data", error)
             return nil
         }
     }

@@ -21,7 +21,7 @@ extension HanekeGlobals {
     
 }
 
-public class DiskFetcher<T : DataConvertible> : Fetcher<T> {
+public class HNKDiskFetcher<T : HNKDataConvertible> : HNKFetcher<T> {
     
     let path : String
     var cancelled = false
@@ -72,7 +72,7 @@ public class DiskFetcher<T : DataConvertible> : Fetcher<T> {
         if value == nil {
             let localizedFormat = NSLocalizedString("Failed to convert value from data at path %@", comment: "Error description")
             let description = String(format:localizedFormat, self.path)
-            let error = errorWithCode(HanekeGlobals.DiskFetcher.ErrorCode.InvalidData.rawValue, description: description)
+            let error = Haneke.errorWithCode(HanekeGlobals.DiskFetcher.ErrorCode.InvalidData.rawValue, description: description)
             dispatch_async(dispatch_get_main_queue()) {
                 fail(error)
             }
